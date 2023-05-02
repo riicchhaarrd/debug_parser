@@ -1,5 +1,3 @@
-#pattern = r'\w+:t\(\d+,\d+\)=s(?P<size>\d+)'
-#pattern = r'\w+:t\(\d+,\d+\)=s(\d+)(\w+)'
 import re
 
 def bits_to_type(bits):
@@ -21,18 +19,16 @@ def parse_line(line):
     for m in members:
         if len(m) <= 1:
             continue
-        s = re.findall(r'(\w+):\(\d+,\d+\),(\d+),(\d+)', m)
+        s = re.findall(r'(\w+):\(\d+,\d+\)(?:=x.(\w+):)?,(\d+),(\d+)', m)
         if len(s) == 0:
             continue
         s = s[0]
         name = s[0]
-        offset = int(s[1])
-        bits = int(s[2])
+        type_name = s[1]
+        offset = int(s[2])
+        bits = int(s[3])
         #name, offset, bits = s[0]
-        if bits % 8 != 0:
-            raise Exception('not divisible by 8')
-        type = bits_to_type(bits)
-        bytes = bits // 8
+
         if bit_offset != offset:
             # add padding
             if (offset - bit_offset) % 8 != 0:
@@ -42,10 +38,18 @@ def parse_line(line):
             padding_count += 1
             # update bit_offset
             bit_offset = offset
-        if type == None:
-            print(f'\tchar {name}[{bytes}];')
+
+        if len(type_name) == 0:
+            if bits % 8 != 0:
+                raise Exception('not divisible by 8')
+            type = bits_to_type(bits)
+            bytes = bits // 8
+            if type == None:
+                print(f'\tchar {name}[{bytes}];')
+            else:
+                print(f'\t{type} {name};')
         else:
-            print(f'\t{type} {name};')
+            print(f'\t{type_name} {name};')
         bit_offset += bits
         #print(name, offset, bits)
     print('};\n')
