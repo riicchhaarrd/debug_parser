@@ -97,8 +97,8 @@ type_names = {}
 with open(path, 'r') as f:
     lines = f.readlines()
     for line in lines:
-        try:    
-            query = r'(\w+):t\(\d+,\d+\)=([use])(?:\d+)?'
+        try:
+            query = r'(\w+):T?t\(\d+,\d+\)=([use])(?:\d+)?'
             s = re.findall(query, line)
             if len(s) == 0:
                 continue
