@@ -13,12 +13,8 @@ def bits_to_type(bits):
         return None
     return types[bits]
 
-def parse_line(line):
-    struct_name = line.split(':')[0]
-    s = re.search(r'=s\d+', line)
-    if not s:
-        return
-    after = line[s.end():]
+def parse_struct(struct_name, pos, line):
+    after = line[pos:]
     members = after.split(';')
     print(f'struct {struct_name}\n{{')
     bit_offset = 0
@@ -63,10 +59,22 @@ def parse_line(line):
     
 print('#include <stdint.h>\n')
 
+type_names = {}
 with open(path, 'r') as f:
     lines = f.readlines()
     for line in lines:
         try:
-            parse_line(line)
+            if line.find(":t(") == -1:
+                continue
+            type_name = line.split(':t(')[0]
+            if len(type_name) == 0:
+                continue
+            if type_name in type_names:
+                continue
+            s = re.search(r'=s\d+', line)
+            if not s:
+                continue
+            parse_struct(type_name, s.end(), line)
+            type_names[type_name] = True
         except:
             pass
