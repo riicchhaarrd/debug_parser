@@ -13,10 +13,12 @@ def bits_to_type(bits):
         return None
     return types[bits]
 
-def parse_struct(struct_name, pos, line):
-    after = line[pos:]
-    members = after.split(';')
-    print(f'struct {struct_name}\n{{')
+def parse_struct(struct_name, struct_type, data):
+    members = data.split(';')
+    if struct_type == 's':
+        print(f'struct {struct_name}\n{{')
+    else:
+        print(f'union {struct_name}\n{{')
     bit_offset = 0
     padding_count = 0
     for m in members:
@@ -53,9 +55,27 @@ def parse_struct(struct_name, pos, line):
                 print(f'\t{type} {name};')
         else:
             print(f'\t{type_name} {name};')
-        bit_offset += bits
+        if struct_type == 's':
+            bit_offset += bits
         #print(name, offset, bits)
     print('};\n')
+
+def parse_enum(enum_name, data):
+    values = data.split(',')
+    n = 0
+    print('typedef enum\n{')
+    for v in values:
+        pair = v.split(':')
+        if len(pair) != 2:
+            continue
+        key = pair[0]
+        value = int(pair[1])
+        if len(values) - 1 == n + 1:
+            print(f'\t{key} = {value}')
+        else:
+            print(f'\t{key} = {value},')
+        n += 1
+    print(f'}} {enum_name};\n')
     
 print('#include <stdint.h>\n')
 
@@ -63,18 +83,28 @@ type_names = {}
 with open(path, 'r') as f:
     lines = f.readlines()
     for line in lines:
-        try:
-            if line.find(":t(") == -1:
+        try:    
+            query = r'(\w+):t\(\d+,\d+\)=([use])(?:\d+)?'
+            s = re.findall(query, line)
+            if len(s) == 0:
                 continue
-            type_name = line.split(':t(')[0]
+            type_name = s[0][0]
+
             if len(type_name) == 0:
                 continue
+
             if type_name in type_names:
                 continue
-            s = re.search(r'=s\d+', line)
-            if not s:
-                continue
-            parse_struct(type_name, s.end(), line)
+            
+            type = s[0][1]
+            pos = re.search(query, line).end()
+            data = line[pos:]
+            if type == 's' or type == 'u':
+                parse_struct(type_name, type, data)
+            elif type == 'e':
+                parse_enum(type_name, data)
+            else:
+                raise Exception('expected struct, union or enum')
             type_names[type_name] = True
         except:
             pass
