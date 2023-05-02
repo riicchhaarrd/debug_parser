@@ -1,4 +1,11 @@
 import re
+import sys
+
+path = None
+if len(sys.argv) < 2:
+    print(f'Usage: {sys.argv[0]} <strings_file>')
+    exit()
+path = sys.argv[1]
 
 def bits_to_type(bits):
     types = {8: 'uint8_t', 16: 'uint16_t', 32: 'uint32_t', 64: 'uint64_t'}
@@ -56,7 +63,7 @@ def parse_line(line):
     
 print('#include <stdint.h>\n')
 
-with open("types.h", 'r') as f:
+with open(path, 'r') as f:
     lines = f.readlines()
     for line in lines:
         try:
