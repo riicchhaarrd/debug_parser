@@ -8,7 +8,15 @@ if len(sys.argv) < 3:
 path = sys.argv[1]
 out_path = sys.argv[2]
 
-def bits_to_type(bits):
+def bits_to_type(bits, field_name):
+    l = len(field_name)
+    if l > 2:
+        if field_name[0] == 'f' and field_name[1].isupper():
+            return 'float'
+        if l > 3:
+            #if we compile with -m64 then we kinda don't want this, but u32
+            if field_name[0:3] == "psz" and field_name[3].isupper():
+                return "const char*"
     types = {8: 'uint8_t', 16: 'uint16_t', 32: 'uint32_t', 64: 'uint64_t'}
     if bits not in types:
         return None
@@ -48,7 +56,7 @@ def parse_struct(o, struct_name, struct_type, data):
         if len(type_name) == 0:
             if bits % 8 != 0:
                 raise Exception('not divisible by 8')
-            type = bits_to_type(bits)
+            type = bits_to_type(bits, name)
             bytes = bits // 8
             if type == None:
                 o.write(f'\tchar {name}[{bytes}];\n')
